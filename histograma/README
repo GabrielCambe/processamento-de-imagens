@@ -1,6 +1,6 @@
-Para compilar faça:
+Faça:
 $ make
-Após isso o programa pode ser executado como:
+Após isso, o programa pode ser executado como:
 $ ./histograma
 
 Saída:

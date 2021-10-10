@@ -1,4 +1,6 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+# -- coding: utf-8 --
+
 import sys
 import argparse
 from os import walk
@@ -8,12 +10,13 @@ from matplotlib import pyplot as plt
 
 parser = argparse.ArgumentParser(
     prog='histograma',
-    description='Compara imagens utilizando 4 métodos diferentes de comparação de histograma.'
+    description='Compara imagens utilizando 4 métodos diferentes de comparação de histograma. As imagens devem estar no mesmo diretório do script e seus nomes devem ser formatados exatamente como os das imagens passadas com a especificação. Cada classe (ou personagem) deve possuir duas imagens nomeadas \'nome1.png\' e \'nome2.png\' pois o programa usará slices das string para checar se a classificação foi correta.'
 )
+
 parser.add_argument('-p', '--plot', action='store_true', dest='plot', help='faz o programa mostrar as imagens e os histogramas antes da classificação.')
 parser.add_argument('-d', '--debug', action='store_true', dest='debug', help='imprime mensagens para debug.')
 parser.add_argument('-n', '--normalize', action='store_true', dest='normalize',  help='faz o programa normalizar os histogramas antes da classificação.')
-parser.add_argument('-e', '--equalize', action='store_true', dest='equalize',  help='faz o programa equalizar os histogramas das imagens em níveis de cinza antes da classificação.')
+parser.add_argument('-e', '--equalize', action='store_true', dest='equalize',  help='faz o programa equalizar os histogramas das imagens em níveis de cinza antes da classificação. As imagens coloridas são convertidas para HSV e tem seu canal V equalizado, sendo convertidas para RGB depois.')
 
 args = parser.parse_args()
 
@@ -33,12 +36,29 @@ comparison_methods = [
     {'number': cv.HISTCMP_BHATTACHARYYA, 'name': 'HISTCMP_BHATTACHARYYA (Bhattacharyya distance)', 'sorting_order': {'reverse': False}}
 ]
 
+def readImage(filename, readMethod):
+    global args
+    
+    img = cv.imread(filename, readMethod)
+
+    if args.equalize:
+        if readMethod != cv.IMREAD_COLOR:
+            img = cv.equalizeHist(img)
+        else:
+            HSV_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)        
+            # Equalizando o canal 'V' da imagem
+            HSV_img[:, :, 2] = cv.equalizeHist(HSV_img[:, :, 2])
+            img = cv.cvtColor(HSV_img, cv.COLOR_HSV2RGB)
+    
+    return img
+
+
 
 # Abrindo as imagens em cor
 print("Abrindo imagens com \'cv.IMREAD_COLOR\':\n", file=sys.stderr)
 images = {}
 for filename in image_filenames:
-    images[filename] = {'img': cv.imread(filename, cv.IMREAD_COLOR)}
+    images[filename] = {'img': readImage(filename, cv.IMREAD_COLOR)}
     
     # Cria histogramas de cada canal da imagem
     BGR_planes = cv.split(images[filename]['img'])
@@ -116,15 +136,6 @@ for method in comparison_methods:
 
 
 
-def readImage(filename, readMethod):
-    global args
-
-    if args.equalize and readMethod != cv.IMREAD_COLOR:
-        return cv.equalizeHist(
-            cv.imread(filename, readMethod)
-        )
-    
-    return cv.imread(filename, readMethod)
 
 # Abrindo as imagens em grayscale
 print("\nAbrindo imagens com \'cv.IMREAD_GRAYSCALE\':\n", file=sys.stderr)

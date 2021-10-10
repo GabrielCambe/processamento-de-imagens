@@ -1,25 +1,22 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+# -- coding: utf-8 --
+
 import sys
 import argparse
 from os import walk
-
 import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
 
 parser = argparse.ArgumentParser(
     prog='histograma',
-    description='Compara imagens utilizando 4 métodos diferentes de comparação de histograma.'
+    description='Compara imagens utilizando 4 métodos diferentes de comparação de histograma. As imagens devem estar no mesmo diretório do script e seus nomes devem ser formatados exatamente como os das imagens passadas com a especificação. Cada classe (ou personagem) deve possuir duas imagens nomeadas \'nome1.png\' e \'nome2.png\' pois o programa usará slices das string para checar se a classificação foi correta.'
 )
+
 parser.add_argument('-p', '--plot', action='store_true', dest='plot', help='faz o programa mostrar as imagens e os histogramas antes da classificação.')
 parser.add_argument('-d', '--debug', action='store_true', dest='debug', help='imprime mensagens para debug.')
-
-# Argumentos de normalização
 parser.add_argument('-n', '--normalize', action='store_true', dest='normalize',  help='faz o programa normalizar os histogramas antes da classificação.')
-parser.add_argument('-nB', '--normalize-beta', type=int, default=255, dest='normalize_beta',  help='valor utilizado no argumento \'beta\' da função de normalização do opencv.')
-
-# Argumentos de normalização
-parser.add_argument('-e', '--equalize', action='store_true', dest='equalize',  help='faz o programa equalizar os histogramas das imagens em níveis de cinza antes da classificação.')
+parser.add_argument('-e', '--equalize', action='store_true', dest='equalize',  help='faz o programa equalizar os histogramas das imagens em níveis de cinza antes da classificação. As imagens coloridas são convertidas para HSV e tem seu canal V equalizado, sendo convertidas para RGB depois.')
 
 args = parser.parse_args()
 
@@ -39,14 +36,30 @@ comparison_methods = [
     {'number': cv.HISTCMP_BHATTACHARYYA, 'name': 'HISTCMP_BHATTACHARYYA (Bhattacharyya distance)', 'sorting_order': {'reverse': False}}
 ]
 
+def readImage(filename, readMethod):
+    global args
+    
+    img = cv.imread(filename, readMethod)
+
+    if args.equalize:
+        if readMethod != cv.IMREAD_COLOR:
+            img = cv.equalizeHist(img)
+        else:
+            HSV_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)        
+            # Equalizando o canal 'V' da imagem
+            HSV_img[:, :, 2] = cv.equalizeHist(HSV_img[:, :, 2])
+            img = cv.cvtColor(HSV_img, cv.COLOR_HSV2RGB)
+    
+    return img
+
+
 
 # Abrindo as imagens em cor
 print("Abrindo imagens com \'cv.IMREAD_COLOR\':\n", file=sys.stderr)
 images = {}
 for filename in image_filenames:
-    images[filename] = {'img': cv.imread(filename, cv.IMREAD_COLOR)}
+    images[filename] = {'img': readImage(filename, cv.IMREAD_COLOR)}
     
-
     # Cria histogramas de cada canal da imagem
     BGR_planes = cv.split(images[filename]['img'])
     histSize = [256]
@@ -56,7 +69,7 @@ for filename in image_filenames:
     images[filename]['r_hist'] = cv.calcHist(BGR_planes, [2], None, histSize, histRange, accumulate=False)
 
     if args.normalize:
-        normalizing_kwargs = { 'alpha': 0, 'beta': args.normalize_beta, 'norm_type': cv.NORM_MINMAX }
+        normalizing_kwargs = { 'alpha': 0, 'beta': 255, 'norm_type': cv.NORM_MINMAX }
         cv.normalize(images[filename]['b_hist'], images[filename]['b_hist'], **normalizing_kwargs)
         cv.normalize(images[filename]['g_hist'], images[filename]['g_hist'], **normalizing_kwargs)
         cv.normalize(images[filename]['r_hist'], images[filename]['r_hist'], **normalizing_kwargs)
@@ -76,7 +89,6 @@ for filename in image_filenames:
         axarr[1].title.set_text('Histograma de %s' % filename)  
 
         plt.show()
-
 
 for method in comparison_methods:
     print(method['name'], file=sys.stderr)
@@ -108,8 +120,8 @@ for method in comparison_methods:
             hist_comparison_score = sum([b_hist_comparison, g_hist_comparison, r_hist_comparison])/3
             hist_comparisons.append({'filename': filename_j, 'score': hist_comparison_score})
         
-        # Eu comparei a imagem consigo mesma para ter uma espécie de teste de sanidade para meu algoritmo
-        # A posição 0 do vetor abaixo conterá a própria imagem, então a classificação que esse algoritmo faz
+        # Eu comparei a imagem com ela mesma para ter uma espécie de teste de sanidade pro meu programa
+        # A posição 0 do vetor abaixo conterá a própria imagem, então, a classificação que esse algoritmo faz
         # será a próxima comparação mais próxima, ou "best_match", que no caso estará na posição 1 do vetor 
         best_match = sorted(hist_comparisons, key=lambda x : x['score'], **method['sorting_order'])[1] 
 
@@ -123,19 +135,10 @@ for method in comparison_methods:
     print(('TAXA DE ACERTOS: %.2f\n' % float(hits/(len(images)-1))), file=sys.stderr)
 
 
-def readImage(filename, readMethod):
-    global args
-
-    if args.equalize and readMethod != cv.IMREAD_COLOR:
-        return cv.equalizeHist(
-            cv.imread(filename, readMethod)
-        )
-    
-    return cv.imread(filename, readMethod)
 
 
 # Abrindo as imagens em grayscale
-print("Abrindo imagens com \'cv.IMREAD_GRAYSCALE\':\n", file=sys.stderr)
+print("\nAbrindo imagens com \'cv.IMREAD_GRAYSCALE\':\n", file=sys.stderr)
 images = {}
 for filename in image_filenames:
     images[filename] = {'img': readImage(filename, cv.IMREAD_GRAYSCALE)}
@@ -146,7 +149,7 @@ for filename in image_filenames:
     images[filename]['hist'] = cv.calcHist(images[filename]['img'], [0], None, histSize, histRange, accumulate=False)
 
     if args.normalize:
-        normalizing_kwargs = { 'alpha': 0, 'beta': args.normalize_beta, 'norm_type': cv.NORM_MINMAX }
+        normalizing_kwargs = { 'alpha': 0, 'beta': 255, 'norm_type': cv.NORM_MINMAX }
         cv.normalize(images[filename]['hist'], images[filename]['hist'], **normalizing_kwargs)
  
     if args.plot:
@@ -160,7 +163,6 @@ for filename in image_filenames:
         axarr[1].title.set_text('Histograma de %s' % filename)  
 
         plt.show()
-
 
 for method in comparison_methods:
     print(method['name'], file=sys.stderr)
@@ -181,9 +183,6 @@ for method in comparison_methods:
 
             hist_comparisons.append({'filename': filename_j, 'score': hist_comparison})
         
-        # Eu comparei a imagem consigo mesma para ter uma espécie de teste de sanidade para meu algoritmo
-        # A posição 0 do vetor abaixo conterá a própria imagem, então a classificação que esse algoritmo faz
-        # será a próxima comparação mais próxima, ou "best_match", que no caso estará na posição 1 do vetor 
         best_match = sorted(hist_comparisons, key=lambda x : x['score'], **method['sorting_order'])[1] 
 
         if filename_i[0:-5] == best_match['filename'][0:-5]:
