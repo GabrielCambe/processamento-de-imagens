@@ -1,0 +1,33 @@
+Para compilar faça:
+$ make
+Após isso o programa pode ser executado como:
+$ ./histograma
+
+Saída:
+O programa irá imprimir na saida de erro, para cada uma das funções de comparação e métodos de abertura de imagem:
+Abrindo imagens com '$(método do opencv utilizado para abrir a imagem)':
+$(nomde da função de comparação)
+ACERTOS: $(número de acertos)
+ERROS: $(número de erros)
+TAXA DE ACERTOS: $(número de acertos/(número de imagens - 1)))
+
+%%
+
+RESPOSTAS DAS PERGUNTAS:
+
+Quantas imagens foram classificadas corretamente usando cada uma das distâncias?
+    Para imagens coloridas, sem normalização ou equalização:
+        HISTCMP_CORREL (Correlation) obteve 8 acertos.
+        HISTCMP_CHISQR (Chi-Square) obteve 10 acertos.
+        HISTCMP_INTERSECT (Intersection) obteve 6 acertos.
+        HISTCMP_BHATTACHARYYA (Bhattacharyya distance) obteve 11 acertos.
+
+    Para imagens em escala de cinza, sem normalização ou equalização:
+        HISTCMP_CORREL (Correlation) obteve 3 acertos.
+        HISTCMP_CHISQR (Chi-Square) obteve 1 acerto.
+        HISTCMP_INTERSECT (Intersection) obteve 4 acertos.
+        HISTCMP_BHATTACHARYYA (Bhattacharyya distance) obteve 5 acertos.
+
+O desempenho usando imagens coloridas e em nível de cinza foi o mesmo? Se não, porque?
+    O desempenho para as imagens em escala de cinza não foi o mesmo. Isso de deve provavelmente porque nas imagens coloridas temos mais informação com os histogramas de intensidade. Se a cor do personagem for distinta da dos demais, existe uma chance maior do classificador parear uma de suas imagens com a outra. Como perdemos toda informação sobre a forma dos objetos (i.e. as posições dos pixels contados no histograma), é natural que duas imagens diferentes corram mais risco de serem caracterizadas como a mesma imagem, se elas possuirem cores similares.
+
