@@ -6,7 +6,6 @@ import argparse
 from os import walk
 import numpy as np
 import cv2 as cv
-from matplotlib import pyplot as plt
 
 parser = argparse.ArgumentParser(
     prog='histograma',
@@ -20,6 +19,8 @@ parser.add_argument('-e', '--equalize', action='store_true', dest='equalize',  h
 
 args = parser.parse_args()
 
+if args.plot:
+    from matplotlib import pyplot as plt
 
 # Pega nomes dos arquivos png do diretório corrente
 image_filenames = []
@@ -48,7 +49,7 @@ def readImage(filename, readMethod):
             HSV_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)        
             # Equalizando o canal 'V' da imagem
             HSV_img[:, :, 2] = cv.equalizeHist(HSV_img[:, :, 2])
-            img = cv.cvtColor(HSV_img, cv.COLOR_HSV2RGB)
+            img = cv.cvtColor(HSV_img, cv.COLOR_HSV2BGR)
     
     return img
 
