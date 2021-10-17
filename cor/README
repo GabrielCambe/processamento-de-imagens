@@ -1,0 +1,12 @@
+Faça:
+$ make
+Após isso, o programa pode ser executado como:
+$ ./banana input_img output_img
+Para olhar as flags existentes faça:
+$ ./banana -h
+
+A range final foi criada usando a mediana das coordenadas das ranges encontradas para cada imagem da especificação.
+
+O resultado final ficou satisfatório, as partes verdes ou os reflexos brancos e de outras cores em algumas das imagens foram cortados usando a range final.
+
+Uma possivel maneira de resolver isso seria equalizar o canal de intensidade da imagem hsv antes de escolher as ranges de cada imagem, mas como a especificação dizia para usar apenas informações de cor, foi decidido que era inválido fazer isso para a entrega.

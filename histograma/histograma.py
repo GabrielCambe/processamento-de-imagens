@@ -128,6 +128,7 @@ for method in comparison_methods:
 
         if filename_i[0:-5] == best_match['filename'][0:-5]:
             hits = hits + 1
+            print("HIT: ", filename_i, " x ", best_match['filename'])
         else:
             misses = misses + 1
 
@@ -187,6 +188,7 @@ for method in comparison_methods:
         best_match = sorted(hist_comparisons, key=lambda x : x['score'], **method['sorting_order'])[1] 
 
         if filename_i[0:-5] == best_match['filename'][0:-5]:
+            print("HIT: ", filename_i, " x ", best_match['filename'])
             hits = hits + 1
         else:
             misses = misses + 1
